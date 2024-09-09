@@ -1,72 +1,52 @@
-# Step - 1 : Create EKS Management Host in AWS #
+# Jenkins Server Setup in Linux VM #
 
-1) Launch new Ubuntu VM using AWS Ec2 ( t2.micro )	  
-2) Connect to machine and install kubectl using below commands  
+## Step - 1 : Create Linux VM ##
+
+1) Create Ubuntu VM using AWS EC2 (t2.medium) <br/>
+2) Enable 8080 Port Number in Security Group Inbound Rules
+3) Connect to VM using MobaXterm
+
+## Step-2 : Instal Java ##
+
 ```
-curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.19.6/2021-01-05/bin/linux/amd64/kubectl
-chmod +x ./kubectl
-sudo mv ./kubectl /usr/local/bin
-kubectl version --short --client
-```
-3) Install AWS CLI latest version using below commands 
-```
-sudo apt install unzip
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-unzip awscliv2.zip
-sudo ./aws/install
-aws --version
+sudo apt update
+sudo apt install fontconfig openjdk-17-jre
+java -version
 ```
 
-4) Install eksctl using below commands
+## Step-3 : Install Jenkins ##
 ```
-curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
-sudo mv /tmp/eksctl /usr/local/bin
-eksctl version
+sudo wget -O /usr/share/keyrings/jenkins-keyring.asc \
+  https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
+  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
+  /etc/apt/sources.list.d/jenkins.list > /dev/null
+sudo apt-get update
+sudo apt-get install jenkins
 ```
-# Step - 2 : Create IAM role & attach to EKS Management Host #
 
-1) Create New Role using IAM service ( Select Usecase - ec2 ) 	
-2) Add below permissions for the role <br/>
-	- IAM - fullaccess <br/>
-	- VPC - fullaccess <br/>
-	- EC2 - fullaccess  <br/>
-	- CloudFomration - fullaccess  <br/>
-	- Administrator - acces <br/>
-		
-3) Enter Role Name (eksroleec2) 
-4) Attach created role to EKS Management Host (Select EC2 => Click on Security => Modify IAM Role => attach IAM role we have created) 
+## Step-4 : Start Jenkins ## 
 
-# Step - 3 : Create EKS Cluster using eksctl # 
-**Syntax:** 
+```
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+```
 
-eksctl create cluster --name cluster-name  \
---region region-name \
---node-type instance-type \
---nodes-min 2 \
---nodes-max 2 \ 
---zones <AZ-1>,<AZ-2>
+## Step-5 : Verify Jenkins ##
 
-## N. Virgina: <br/>
-`
-eksctl create cluster --name ashokit-cluster4 --region us-east-1 --node-type t2.medium  --zones us-east-1a,us-east-1b
-`	
-## Mumbai: <br/>
-`
-eksctl create cluster --name ashokit-cluster4 --region ap-south-1 --node-type t2.medium  --zones ap-south-1a,ap-south-1b
-`
-
-## Note: Cluster creation will take 5 to 10 mins of time (we have to wait). After cluster created we can check nodes using below command.
-
-`
- kubectl get nodes  
-`
-
-## Note: We should be able to see EKS cluster nodes here.**
-
-# We are done with our Setup #
+```
+sudo systemctl status jenkins
+```
 	
-## Step - 4 : After your practise, delete Cluster and other resources we have used in AWS Cloud to avoid billing ##
+## Step-6 : Open jenkins server in browser using VM public ip ##
 
 ```
-eksctl delete cluster --name ashokit-cluster4 --region ap-south-1
+http://public-ip:8080/
 ```
+
+## Step-7 : Copy jenkins admin pwd ##
+```
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+```
+	   
+## Step-8 : Create Admin Account & Install Required Plugins in Jenkins ##
