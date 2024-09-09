@@ -1,6 +1,6 @@
-# 1. Tomcat-project
+# Tomcat-project #
 
-## Install Apache-TOMCAT
+## Step-1 : Install Apache-TOMCAT ##
 ```bash
 sudo apt update 
 sudo apt install openjdk-11-jdk
@@ -17,19 +17,19 @@ sudo mkdir -p /opt/tomcat
 sudo tar xzvf apache-tomcat-*tar.gz -C /opt/tomcat --strip-components=1
 ```
 
-## Create A Dedicated User
+## Step-2 : Create A Dedicated User ##
 ```bash
 sudo groupadd tomcat
 sudo useradd -s /bin/false -g tomcat -d /opt/tomcat tomcat
 ```
 
-## User Permissions
+## Step-3 : User Permissions ##
 ```bash
 sudo chown -R tomcat: /opt/tomcat
 sudo sh -c 'chmod +x /opt/tomcat/bin/*.sh'
 ```
 
-## Create A Systemd Service File For TOMCAT
+## Step-4 : Create A Systemd Service File For TOMCAT ##
 ### * Check Java version
 ```bash
 sudo update-alternatives --config java
@@ -83,14 +83,14 @@ sudo systemctl enable tomcat
 sudo systemctl status tomcat
 ```
 
-## Add Roles and Admin Username and Password 
+## Step-5 : Add Roles and Admin Username and Password ##
 > sudo nano /opt/tomcat/conf/tomcat-users.xml
 ```nano
 <role rolename="admin-gui,manager-gui,manager-script,manager-jmx,manager-status,admin-gui"/>
 <user username="admin" password="admin" roles="admin-gui,manager-gui,manager-script"/>
 ```
 
-## Enable TOMCAT and Host Manager Remote Access
+## Step-5 : Enable TOMCAT and Host Manager Remote Access ##
 - **Deployment error so we have to commit these two lines**
 
 > sudo nano /opt/tomcat/webapps/manager/META-INF/context.xml
@@ -109,7 +109,7 @@ allow="127\.\d+\.\d+\.\d+|::1|0:0:0:0:0:0:0:1" /> -->
 
 >sudo systemctl restart tomcat
 
-## Change TOMCAT Port
+## Step-6 : Change TOMCAT Port ##
 ```bash
 sudo su 
 cd /opt/tomcat/conf
