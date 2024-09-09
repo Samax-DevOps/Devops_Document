@@ -1,4 +1,4 @@
-# Tomcat-project #
+# Tomcat Installation #
 
 ## Step-1 : Install Apache-TOMCAT ##
 ```bash
