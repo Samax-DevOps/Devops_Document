@@ -50,5 +50,18 @@ http://public-ip:8080/
 ```
 sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 ```
+
+## Step-8 : Change Jenkins Port ##  
+```
+sudo nano /etc/sysconfig/jenkins
+```
+ > look for port 8080 and change to 8081
+ 
+>cat /etc/sysconfig/jenkins |grep JENKINS_PO
+```
+systemctl restart jenkins
+systemctl start jenkins
+systemctl status jenkins
+```
 	   
-## Step-8 : Create Admin Account & Install Required Plugins in Jenkins ##
+## Step-9 : Create Admin Account & Install Required Plugins in Jenkins ##
