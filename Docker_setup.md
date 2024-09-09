@@ -1,4 +1,4 @@
-# Docker Install using the docker.io package on Ubuntu, follow these steps:
+# Docker Install using the docker.io package on Ubuntu
 
 ## Step 1: Update Your Package List ##
 First, update the package index to ensure you're working with the latest list of available packages:
