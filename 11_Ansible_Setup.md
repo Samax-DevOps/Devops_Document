@@ -1,196 +1,103 @@
 
-# Project Setup using below tools
-1) Maven
-2) Git Hub
-3) Jenkins
-4) Docker
-5) Kubernetes
+# Ansible Setup in Amazon Linux VMs #
 
-# Step-1 : Jenkins Server Setup in Linux VM #
+## Step-0: Create 3 Amazon Linux VMs in AWS (Free Tier Eligible - t2.micro)
 
-1) Create Ubuntu VM using AWS EC2 (t2.medium) <br/>
-2) Enable 8080 Port Number in Security Group Inbound Rules
-3) Connect to VM using MobaXterm
-4) Instal Java
+1 - Control Node <br/>
+2 - Managed Nodes
 
-```
-sudo apt update
-sudo apt install fontconfig openjdk-17-jre
-java -version
-```
+Note: Connect to all 3 VMs using MobaXterm
 
-3) Install Jenkins
+## Step-1: Execute below commands in all 3 VMs ##
+
+### a) Create user ###
 ```
-sudo wget -O /usr/share/keyrings/jenkins-keyring.asc \
-  https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
-echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
-  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
-  /etc/apt/sources.list.d/jenkins.list > /dev/null
-sudo apt-get update
-sudo apt-get install jenkins
+sudo useradd ansible
+sudo passwd ansible
 ```
-4) Start Jenkins
+### b) Configure user in sudoers file ###
+
+sudo visudo
 
 ```
-sudo systemctl enable jenkins
-sudo systemctl start jenkins
+ansible ALL=(ALL) NOPASSWD: ALL
 ```
 
-5) Verify Jenkins
+### c) Update sshd config file ###
+```
+sudo vi /etc/ssh/sshd_config
+```
+-> comment PasswordAuthentication no
+-> PermitEmptyPasswords yes
 
+### d) Restart the server ###
+```   
+sudo service sshd restart
 ```
-sudo systemctl status jenkins
-```
-	
-6) Open jenkins server in browser using VM public ip
+Note: Do the above steps in all the 3 machines 
 
-```
-http://public-ip:8080/
-```
+## Step-2: Install Ansible in Control Node ##
 
-7) Copy jenkins admin pwd
+### a) Switch to Ansible user ### 
 ```
-sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+sudo su ansible
+cd ~
 ```
-	   
-8) Create Admin Account & Install Required Plugins in Jenkins
-
-
-## Step-2 : Configure Maven as Global Tool in Jenkins ##
-1) Manage Jenkins -> Tools -> Maven Installation -> Add maven <br/>
-
-## Step-3 : Setup Docker in Jenkins ##
+### b) Install Python ###
 ```
-curl -fsSL get.docker.com | /bin/bash
-sudo usermod -aG docker jenkins
-sudo systemctl restart jenkins
-sudo docker version
+  sudo yum install python3 -y
 ```
-
-# Step - 4 : Create EKS Management Host in AWS #
-
-1) Launch new Ubuntu VM using AWS Ec2 ( t2.micro )	  
-2) Connect to machine and install kubectl using below commands  
+### c) Check python version  ###
 ```
-curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.19.6/2021-01-05/bin/linux/amd64/kubectl <br/>
-chmod +x ./kubectl
-sudo mv ./kubectl /usr/local/bin
-kubectl version --short --client
+python3 --version
 ```
-3) Install AWS CLI latest version using below commands 
+### d) Install PIP (It is a python package manager) ###
 ```
-sudo apt install unzip 
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-unzip awscliv2.zip
-sudo ./aws/install
-aws --version
+sudo yum -y install python3-pip
+```
+### e) Install Ansible using Python PIP ###
+```
+pip3 install ansible --user
+```
+### f) Verify ansible version  ###
+```
+ansible --version
+```
+### g)  Create ansible folder under /etc ###
+```
+sudo mkdir /etc/ansible 
 ```
 
-4) Install eksctl using below commands
-```
-curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
-sudo mv /tmp/eksctl /usr/local/bin
-eksctl version <br/>
-```
+## Step-3: Generate SSH Key In Control Node and  Copy SSH key into Managed Nodes ##
 
-# Step - 5 : Create IAM role & attach to EKS Management Host & Jenkins Server #
-
-1) Create New Role using IAM service ( Select Usecase - ec2 ) 	
-2) Add below permissions for the role <br/>
-	- IAM - fullaccess <br/>
-	- VPC - fullaccess <br/>
-	- EC2 - fullaccess  <br/>
-	- CloudFomration - fullaccess  <br/>
-	- Administrator - acces <br/>
-		
-3) Enter Role Name (eksroleec2) 
-4) Attach created role to EKS Management Host (Select EC2 => Click on Security => Modify IAM Role => attach IAM role we have created) 
-5) Attach created role to Jenkins Machine (Select EC2 => Click on Security => Modify IAM Role => attach IAM role we have created) 
-  
-# Step - 6 : Create EKS Cluster using eksctl # 
-**Syntax:** 
-
-eksctl create cluster --name cluster-name  \
---region region-name \
---node-type instance-type \
---nodes-min 2 \
---nodes-max 2 \ 
---zones <AZ-1>,<AZ-2>
+### a) Switch to ansible user ###
 
 ```
-eksctl create cluster --name ashokit-cluster --region ap-south-1 --node-type t2.medium  --zones ap-south-1a,ap-south-1b**
+sudo su ansible
 ```
-
-Note: Cluster creation will take 5 to 10 mins of time (we have to wait). After cluster created we can check nodes using below command.	
+### Generate ssh key using below command ###
 ```
-kubectl get nodes  
+ssh-keygen
 ```
-# Step - 7 : Install AWS CLI in JENKINS Server #
-
-URL : https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html  
-
-**Execute below commands to install AWS CLI**
+### b) Copy it to Managed Nodes as ansible user ###
 ```
-sudo apt install unzip 
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-unzip awscliv2.zip
-sudo ./aws/install
-aws --version
+ssh-copy-id ansible@<ManagedNode-Private-IP>
 ```
+Ex : $ ssh-copy-id ansible@172.31.44.90
  
-# Step - 8 : Install Kubectl in JENKINS Server #
-**Execute below commands in Jenkins server to install kubectl**
+Note: Repeat above command by updating HOST IP for all the managed Servers.
 
+## Step-4: Update Host Inventory in Ansible Server to add managed node servers details ##
 ```
-curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.19.6/2021-01-05/bin/linux/amd64/kubectl
-chmod +x ./kubectl
-sudo mv ./kubectl /usr/local/bin
-kubectl version --short --client
+sudo vi /etc/ansible/hosts
 ```
+[webservers] <br/>
+172.31.47.247
+<br/>
+[dbservers] <br/>
+172.31.44.90
 
-# Step - 9 : Update EKS Cluster Config File in Jenkins Server #
-	
-1) Execute below command in Eks Management host & copy kube config file data <br/>
-	$ cat .kube/config 
-
-2) Execute below commands in Jenkins Server and paste kube config file  <br/>
-	$ cd /var/lib/jenkins <br/>
-	$ sudo mkdir .kube  <br/>
-	$ sudo vi .kube/config  <br/>
-
-3) Execute below commands in Jenkins Server and paste kube config file for ubuntu user to check EKS Cluster info<br/>
-	$ cd ~ <br/>
-	$ ls -la  <br/>
-	$ sudo vi .kube/config  <br/>
-
-4) check eks nodes <br/>
-	$ kubectl get nodes 
-
-**Note: We should be able to see EKS cluster nodes here.**
-
-# Step - 10 : Create Jenkins CI Job #
-
-- **Stage-1 : Clone Git Repo** <br/> 
-- **Stage-2 : Build** <br/>
-- **Stage-3 : Create Docker Image** <br/>
-- **Stage-4 : Push Docker Image to Registry** <br/>
-- **Stage-5 : Trigger CD Job** <br/>
-	
-# Step - 11 : Create Jenkins CD Job #
-
-- **Stage-1 : Clone k8s manifestfiles** <br/>
-- **Stage-2 : Deploy app in k8s eks cluster** <br/>
-- **Stage-3 : Send confirmatin email** <br/>
-
-	
-# Step - 12 : Trigger Jenkins CI Job #
-- **CI Job will execute all the stages and it will trigger CD Job** <br/>
-- **CD Job will fetch docker image and it will deploy on cluster** <br/>
-	
-# Step - 13 : Access Application in Browser #
-- **We should be able to access our application** <br/>
-URL : http://LBR/context-path/
-	
-# We are done with our Setup #
-	
-## Step - 14 : After your practise, delete Cluster and other resources we have used in AWS Cloud to avoid billing ##
+## Step-5: Test Connectivity ##
+```
+ansible all -m ping
+```
