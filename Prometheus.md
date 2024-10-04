@@ -1,17 +1,17 @@
-## Install Prometheus and cAdvisor
+# Install Prometheus and cAdvisor
 
-cAdvisor (short for container Advisor) analyzes and exposes resource usage and performance data from running containers. cAdvisor exposes Prometheus metrics out of the box.
+- cAdvisor (short for container Advisor) analyzes and exposes resource usage and performance data from running containers. cAdvisor exposes Prometheus metrics out of the box.
 
-Download the prometheus config file
+- Download the prometheus config file
 ```
 wget https://raw.githubusercontent.com/prometheus/prometheus/main/documentation/examples/prometheus.yml
 ```
-Install Prometheus using Docker
+## Install Prometheus using Docker
 ```
 docker run -d --name=prometheus -p 9090:9090 -v <PATH_TO_prometheus.yml_FILE>:/etc/prometheus/prometheus.yml prom/prometheus --config.file=/etc/prometheus/prometheus.yml
 ```
 
-Add cAdvisor target
+## Add cAdvisor target
 
 ```
 scrape_configs:
@@ -22,7 +22,7 @@ scrape_configs:
     - cadvisor:8080
 ```
 
-#Using Docker Compose
+### Using Docker Compose
 
 ```
 version: '3.2'
@@ -56,7 +56,7 @@ services:
     ports:
     - 6379:6379
 ```
-#  Verify
+###  Verify
 ```
 docker-compose up -d
 docker-compose ps
